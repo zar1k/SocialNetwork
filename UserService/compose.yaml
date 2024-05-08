@@ -1,0 +1,12 @@
+services:
+  mongodb:
+    image: 'mongo:7.0'
+    container_name: user-service-db
+    environment:
+      - 'MONGO_INITDB_DATABASE=user-service'
+      - 'MONGO_INITDB_ROOT_PASSWORD=password'
+      - 'MONGO_INITDB_ROOT_USERNAME=root'
+    ports:
+      - '27017:27017'
+    volumes:
+      - ./data:/data/db

@@ -1,0 +1,145 @@
+services:
+  user-service-mongodb:
+    image: 'mongo:7.0'
+    container_name: user-service-db
+    environment:
+      - 'MONGO_INITDB_DATABASE=user-service'
+      - 'MONGO_INITDB_ROOT_PASSWORD=password'
+      - 'MONGO_INITDB_ROOT_USERNAME=root'
+    ports:
+      - '27017:27017'
+    volumes:
+      - ./user-service-data:/data/db
+    networks:
+      - social-network
+
+  post-service-mongodb:
+    image: 'mongo:7.0'
+    container_name: post-service-db
+    environment:
+      - 'MONGO_INITDB_DATABASE=post-service'
+      - 'MONGO_INITDB_ROOT_PASSWORD=password'
+      - 'MONGO_INITDB_ROOT_USERNAME=root'
+    ports:
+      - '27018:27017'
+    volumes:
+      - ./post-service-data:/data/db
+    networks:
+      - social-network
+
+  comment-service-mongodb:
+    image: 'mongo:7.0'
+    container_name: comment-service-db
+    environment:
+      - 'MONGO_INITDB_DATABASE=comment-service'
+      - 'MONGO_INITDB_ROOT_PASSWORD=password'
+      - 'MONGO_INITDB_ROOT_USERNAME=root'
+    ports:
+      - '27019:27017'
+    volumes:
+      - ./comment-service-data:/data/db
+    networks:
+      - social-network
+
+  discovery-server:
+    build:
+      context: ./DiscoveryServer
+      dockerfile: Dockerfile
+    container_name: discovery-server
+    pull_policy: always
+    ports:
+      - "8761:8761"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    networks:
+      - social-network
+
+  api-gateway:
+    build:
+      context: ./ApiGateway
+      dockerfile: Dockerfile
+    container_name: api-gateway
+    pull_policy: always
+    ports:
+      - "8080:8080"
+    expose:
+      - "8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    depends_on:
+      - discovery-server
+    networks:
+      - social-network
+
+  authentication-service:
+    build:
+      context: ./AuthenticationService
+      dockerfile: Dockerfile
+    container_name: authentication-service
+    pull_policy: always
+    ports:
+      - "8084:8084"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    depends_on:
+      - user-service
+      - discovery-server
+    networks:
+      - social-network
+
+  comment-service:
+    build:
+      context: ./CommentService
+      dockerfile: Dockerfile
+    container_name: comment-service
+    pull_policy: always
+    ports:
+      - "8087:8087"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    depends_on:
+      - comment-service-mongodb
+      - discovery-server
+    networks:
+      - social-network
+
+  post-service:
+    build:
+      context: ./PostService
+      dockerfile: Dockerfile
+    container_name: post-service
+    pull_policy: always
+    ports:
+      - "8086:8086"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    depends_on:
+      - post-service-mongodb
+      - user-service
+      - discovery-server
+    networks:
+      - social-network
+
+  user-service:
+    build:
+      context: ./UserService
+      dockerfile: Dockerfile
+    container_name: user-service
+    pull_policy: always
+    ports:
+      - "8085:8085"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    depends_on:
+      - user-service-mongodb
+      - discovery-server
+    networks:
+      - social-network
+
+networks:
+  social-network:
+
+volumes:
+  user-service-data:
+  post-service-data:
+  comment-service-data:
